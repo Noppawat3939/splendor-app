@@ -1,0 +1,22 @@
+{
+  "name": "splendor-app",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:client": "bun run --filter './packages/client' dev",
+    "dev:server": "bun run --filter './packages/server' dev",
+    "build": "bun run --filter '*' build",
+    "test": "bun test --cwd packages/core"
+  }
+}

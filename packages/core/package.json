@@ -1,0 +1,13 @@
+{
+  "name": "@splendor/core",
+  "version": "0.1.0",
+  "module": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "build": "bun build src/index.ts --outdir dist"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
