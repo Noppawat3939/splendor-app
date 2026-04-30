@@ -1,7 +1,7 @@
 {
   "name": "@splendor/core",
   "version": "0.1.0",
-  "module": "src/index.ts",
+  "module": "index.ts",
   "scripts": {
     "test": "bun test",
     "test:watch": "bun test --watch",

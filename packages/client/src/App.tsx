@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Home from "./pages/Home";
+import Game from "./pages/Game";
 
 interface PlayerConfig {
   id: string;
@@ -14,9 +15,5 @@ export default function App() {
     return <Home onStart={setPlayers} />;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-      <p>Game starts with {players.length} players</p>
-    </div>
-  );
+  return <Game players={players} onExit={() => setPlayers(null)} />;
 }
