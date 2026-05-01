@@ -7,9 +7,7 @@ import {
   GameState,
   Player,
   Board,
-  TierDeck,
   TokenPool,
-  GemColor,
   GEM_COLORS,
   GAME_CONFIG,
   emptyGemPool,
@@ -21,8 +19,7 @@ import {
   TIER3_CARDS,
   ALL_NOBLES,
 } from "./splendor.data";
-import { computeBonuses, computePrestige } from "./splendor.engine";
-import { DevelopmentCard, Noble } from "./splendor.types";
+import { Noble } from "./splendor.types";
 
 // ── Shuffle ───────────────────────────────────────────────────
 
@@ -116,11 +113,11 @@ export interface PlayerConfig {
  * ])
  */
 export function createGame(players: PlayerConfig[]): GameState {
-  if (players.length < 2 || players.length > 4) {
+  if (players?.length < 2 || players?.length > 4) {
     throw new Error("Splendor requires 2–4 players");
   }
 
-  const nobles = shuffle(ALL_NOBLES).slice(0, nobleCount(players.length));
+  const nobles = shuffle(ALL_NOBLES).slice(0, nobleCount(players?.length));
   const board = buildBoard(players.length, nobles);
 
   return {

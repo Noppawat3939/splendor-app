@@ -1,6 +1,8 @@
 import type { DevelopmentCard } from "@splendor/core";
 import { GEM_COLORS } from "@splendor/core";
-import { gemColor } from "../../utils/gemColor";
+import { gemColor, gemColorSecondary } from "../../utils/gemColor";
+import { gemImageByColor } from "../../utils/gemImage";
+import background from "../../assets/banner.webp";
 
 interface CardTileProps {
   card: DevelopmentCard;
@@ -10,37 +12,6 @@ interface CardTileProps {
   highlight?: boolean;
 }
 
-function cardBg(bonus: string): { bg: string; pattern: string } {
-  const map: Record<string, { bg: string; pattern: string }> = {
-    white: {
-      bg: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%)",
-      pattern:
-        "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.6) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.6) 1px, transparent 1px)",
-    },
-    blue: {
-      bg: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #2563eb 100%)",
-      pattern:
-        "radial-gradient(circle at 20% 80%, rgba(219,234,254,0.4) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(219,234,254,0.4) 1px, transparent 1px)",
-    },
-    green: {
-      bg: "linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #16a34a 100%)",
-      pattern:
-        "radial-gradient(circle at 20% 80%, rgba(220,252,231,0.4) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(220,252,231,0.4) 1px, transparent 1px)",
-    },
-    red: {
-      bg: "linear-gradient(135deg, #ef4444 0%, #f87171 50%, #dc2626 100%)",
-      pattern:
-        "radial-gradient(circle at 20% 80%, rgba(254,226,226,0.4) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(254,226,226,0.4) 1px, transparent 1px)",
-    },
-    black: {
-      bg: "linear-gradient(135deg, #374151 0%, #4b5563 50%, #1f2937 100%)",
-      pattern:
-        "radial-gradient(circle at 20% 80%, rgba(209,213,219,0.4) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(209,213,219,0.4) 1px, transparent 1px)",
-    },
-  };
-  return map[bonus] ?? { bg: "#1e293b", pattern: "" };
-}
-
 export default function CardTile({
   card,
   onClick,
@@ -48,54 +19,70 @@ export default function CardTile({
   isReserved,
   highlight,
 }: CardTileProps) {
-  const { pattern } = cardBg(card.bonus);
-
   return (
     <div
       onClick={!disabled ? onClick : undefined}
       className={`
-      rounded-lg p-2 flex flex-col justify-between
-      border-2 transition-all relative overflow-hidden
-      aspect-[2/3] w-full
+      rounded-lg flex flex-col justify-between relative
+      transition-all overflow-hidden
+      aspect-[2/3] w-full bg-cover bg-no-repeat bg-center shadow-2xl border border-white/20 duration-200 hover:-translate-y-1
       ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       ${isReserved ? "opacity-80" : ""}
     `}
-      style={{
-        background: "#000",
-      }}
+      style={{ backgroundImage: `url(${background})` }}
     >
-      {/* pattern overlay */}
-      <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
-        style={{ backgroundImage: pattern, backgroundSize: "8px 8px" }}
-      />
+      {/* overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-gray-950/70 to-sky-400/20" />
 
-      {/* bonus gem + prestige */}
-      <div className="relative z-10 flex items-center justify-between">
-        <div
-          className="w-5 h-5 rounded-full border border-white/30"
-          style={{ background: gemColor(card.bonus) }}
-        />
-        {card.prestige > 0 && (
-          <span className="text-white font-bold text-sm drop-shadow">
-            ★{card.prestige}
-          </span>
-        )}
-      </div>
+      <div className="flex flex-col justify-between flex-1">
+        {/* bonus gem + prestige */}
+        <div className="flex items-center justify-between mt-0 z-10">
+          {card.prestige > 0 && (
+            <span
+              className="text-white [-webkit-text-stroke:0.8px_black] max-sm:[-webkit-text-stroke:0.4px_black] font-bold text-sm drop-shadow px-1 w-4 ml-1 pb-1 rounded-bl rounded-br  border-b border-l border-white/60"
+              style={{ backgroundColor: gemColorSecondary(card.bonus) }}
+            >
+              {card.prestige}
+            </span>
+          )}
 
-      {/* cost */}
-      <div className="relative z-10 flex flex-col gap-0.5 mt-2">
-        {GEM_COLORS.filter((c) => card.cost[c] > 0).map((color) => (
-          <div key={color} className="flex items-center gap-1">
-            <div
-              className="w-3 h-3 rounded-full border border-white/20"
-              style={{ background: gemColor(color) }}
-            />
-            <span className="text-xs text-white drop-shadow">
-              {card.cost[color]}
+          <div
+            className="w-6 h-6 rounded-full flex justify-center items-center overflow-hidden border-2 shadow mt-1 mr-1"
+            style={{
+              background: gemColor(card.bonus),
+              borderColor: gemColor(card.bonus),
+            }}
+          >
+            <span
+              aria-label="inner"
+              className="w-full h-full flex justify-center items-center bg-[#FFCE99]"
+            >
+              <img
+                src={gemImageByColor(card.bonus)}
+                alt="gem"
+                width={17}
+                height={17}
+                className="bg-contain"
+              />
             </span>
           </div>
-        ))}
+        </div>
+
+        {/* cost */}
+        <div className="relative z-10 flex flex-col gap-0.5 mt-2 pl-1 pb-1">
+          {GEM_COLORS.filter((c) => card.cost[c] > 0).map((color) => (
+            <div key={color} className="flex items-center gap-1">
+              <div
+                className="w-4 h-4 rounded-full border border-white/20 flex justify-center items-center"
+                style={{ background: gemColor(color) }}
+              >
+                <span className="text-xs text-white drop-shadow [-webkit-text-stroke:0.8px_black] max-sm:[-webkit-text-stroke:0.4px_black]">
+                  {card.cost[color]}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* reserve hint */}

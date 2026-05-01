@@ -12,6 +12,9 @@ import PlayerPanel from "../components/player/PlayerPanel";
 import GemPicker from "../components/actions/GemPicker";
 import GemToken from "../components/board/GemToken";
 import BuyCardModal from "../components/actions/BuyCardModal";
+import logo from "../assets/game-logo.webp";
+import ToastContainer from "../components/ui/Toast";
+import { useToast } from "../hooks/useToast";
 
 interface PlayerConfig {
   id: string;
@@ -19,13 +22,39 @@ interface PlayerConfig {
   isAI: boolean;
 }
 
-interface GameProps {
+// Local mode
+interface LocalGameProps {
   players: PlayerConfig[];
   onExit: () => void;
+  gameState?: never;
+  playerId?: never;
+  onAction?: never;
 }
 
-export default function Game({ players, onExit }: GameProps) {
-  const [state, setState] = useState<GameState>(() => createGame(players));
+// Online mode
+interface OnlineGameProps {
+  disconnectedPlayers?: Set<string>;
+  gameState: GameState;
+  onAction: (action: Action) => void;
+  onExit: () => void;
+  playerId: string;
+  players?: never;
+}
+
+type GameProps = LocalGameProps | OnlineGameProps;
+
+export default function Game(props: GameProps) {
+  const isOnline = !!props.playerId;
+
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Local mode — manage state internally
+  const [localState, setLocalState] = useState<GameState | null>(
+    !isOnline ? () => createGame(props.players!) : null
+  );
+
+  const state = isOnline ? props.gameState : localState!;
+
   const [showGemPicker, setShowGemPicker] = useState(false);
   const [reserveMode, setReserveMode] = useState(false);
   const [buyTarget, setBuyTarget] = useState<{
@@ -38,12 +67,21 @@ export default function Game({ players, onExit }: GameProps) {
   const currentPlayer = state.players[state.currentPlayerIndex];
   const viewingPlayer = state.players[activePlayerTab];
 
+  // Online: only current player can act
+  const isMyTurn = isOnline
+    ? state.players[state.currentPlayerIndex].id === props.playerId
+    : true;
+
   function handleAction(action: Action) {
+    if (isOnline) {
+      props.onAction(action);
+      return;
+    }
     try {
       const next = applyAction(state, action);
-      setState(next);
+      setLocalState(next);
     } catch (e) {
-      alert((e as Error).message);
+      showToast((e as Error).message, "error");
     }
   }
 
@@ -62,6 +100,7 @@ export default function Game({ players, onExit }: GameProps) {
     setShowGemPicker(false);
   }
 
+  // ── Game Over ─────────────────────────────────────────────
   if (state.phase === "ended") {
     const winner = state.players.find((p) => p.id === state.winner);
     return (
@@ -87,39 +126,43 @@ export default function Game({ players, onExit }: GameProps) {
               ))}
           </div>
           <button
-            onClick={onExit}
+            onClick={props.onExit}
             className="bg-yellow-400 text-gray-900 font-bold py-3 px-6 rounded-xl hover:bg-yellow-300"
           >
-            Play Again
+            {isOnline ? "Back to Home" : "Play Again"}
           </button>
         </div>
       </div>
     );
   }
 
+  // ── Game Board ────────────────────────────────────────────
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
-      {/* ── Header (fixed) ── */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
-        <h1 className="text-lg font-bold text-yellow-400">Splendor</h1>
+        <img src={logo} alt="logo" width={76} className="my-auto" />
         <div className="text-sm text-center">
           <span className="text-yellow-400 font-bold">
             {currentPlayer.name}
           </span>
-          <span className="text-gray-400"> — Turn</span>
+          <span className="text-gray-400"> — Turn {state.turnNumber}</span>
+          {isOnline && !isMyTurn && (
+            <p className="text-xs text-gray-500">Waiting...</p>
+          )}
         </div>
         <button
-          onClick={onExit}
+          onClick={props.onExit}
           className="text-sm text-gray-400 hover:text-white"
         >
           Exit
         </button>
       </div>
 
-      {/* ── Board (scrollable center) ── */}
+      {/* Board */}
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3">
         {/* Bank */}
-        <div className="bg-gray-800 rounded-xl p-3">
+        <div className="bg-gray-800/60 rounded-xl p-3">
           <p className="text-xs text-gray-400 mb-2">Bank</p>
           <div className="flex gap-2 flex-wrap">
             {(["white", "blue", "green", "red", "black"] as const).map(
@@ -137,7 +180,7 @@ export default function Game({ players, onExit }: GameProps) {
         </div>
 
         {/* Nobles */}
-        <div className="bg-gray-800 rounded-xl p-3 max-w-3xl mx-auto w-full">
+        <div className="bg-gray-800/60 rounded-xl p-3 max-w-4xl mx-auto w-full">
           <p className="text-xs text-gray-400 mb-2">Nobles</p>
           <div className="flex space-x-4 max-sm:space-x-2 overflow-x-auto pb-1">
             {state.board.nobles.map((noble) => (
@@ -148,7 +191,10 @@ export default function Game({ players, onExit }: GameProps) {
 
         {/* Cards per tier */}
         {([3, 2, 1] as const).map((tier) => (
-          <div key={tier} className="bg-gray-800 rounded-xl p-3">
+          <div
+            key={tier}
+            className="bg-gray-800/60 rounded-xl p-3 max-w-4xl mx-auto w-full"
+          >
             <div className="flex items-center gap-2 mb-2">
               <p className="text-xs text-gray-400">Tier {tier}</p>
               <p className="text-xs text-gray-600">
@@ -166,7 +212,9 @@ export default function Game({ players, onExit }: GameProps) {
                   key={card.id}
                   card={card}
                   highlight={reserveMode}
+                  disabled={!isMyTurn}
                   onClick={() => {
+                    if (!isMyTurn) return;
                     if (reserveMode) {
                       handleAction({ type: "reserveCard", cardId: card.id });
                       setReserveMode(false);
@@ -181,9 +229,9 @@ export default function Game({ players, onExit }: GameProps) {
         ))}
       </div>
 
-      {/* ── Player panel (collapsible) ── */}
+      {/* Player panel */}
       {showPlayerPanel && (
-        <div className="bg-gray-800 border-t border-gray-700 px-3 py-2 shrink-0 max-h-48 overflow-y-auto">
+        <div className="bg-gray-800/60 border-t border-gray-700 px-3 py-2 shrink-0 max-h-48 overflow-y-auto">
           <PlayerPanel
             player={viewingPlayer}
             isActive={activePlayerTab === state.currentPlayerIndex}
@@ -200,44 +248,74 @@ export default function Game({ players, onExit }: GameProps) {
         </div>
       )}
 
-      {/* ── Player tabs ── */}
+      {/* Player tabs */}
       <div className="bg-gray-900 border-t border-gray-700 flex shrink-0">
-        {state.players.map((player, i) => (
-          <button
-            key={player.id}
-            onClick={() => {
-              if (activePlayerTab === i) {
-                setShowPlayerPanel(!showPlayerPanel);
-              } else {
-                setActivePlayerTab(i);
-                setShowPlayerPanel(true);
-              }
-            }}
-            className={`flex-1 py-2 px-1 flex flex-col items-center gap-0.5 transition-colors ${
-              i === state.currentPlayerIndex
-                ? "border-t-2 border-yellow-400"
-                : "border-t-2 border-transparent"
-            } ${activePlayerTab === i && showPlayerPanel ? "bg-gray-800" : ""}`}
-          >
-            <span className="text-xs font-bold truncate w-full text-center">
-              {player.name}
-            </span>
-            <span className="text-yellow-400 text-xs">★ {player.prestige}</span>
-          </button>
-        ))}
+        {state.players.map((player, i) => {
+          const isDisconnected =
+            isOnline && props.disconnectedPlayers?.has(player.id);
+          return (
+            <button
+              key={player.id}
+              onClick={() => {
+                if (activePlayerTab === i) {
+                  setShowPlayerPanel(!showPlayerPanel);
+                } else {
+                  setActivePlayerTab(i);
+                  setShowPlayerPanel(true);
+                }
+              }}
+              className={`flex-1 py-2 px-1 flex flex-col items-center gap-0.5 transition-colors ${
+                i === state.currentPlayerIndex
+                  ? "border-t-2 border-yellow-400"
+                  : "border-t-2 border-transparent"
+              } ${
+                activePlayerTab === i && showPlayerPanel ? "bg-gray-800" : ""
+              }`}
+            >
+              {/* Name + online status */}
+              <div className="flex items-center gap-1 justify-center w-full">
+                {/* status dot */}
+                {isOnline && (
+                  <div
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      isDisconnected ? "bg-gray-500" : "bg-green-400"
+                    }`}
+                  />
+                )}
+                <span className="text-xs font-bold truncate">
+                  {player.name}
+                  {isOnline && player.id === props.playerId && (
+                    <span className="text-blue-400"> (You)</span>
+                  )}
+                </span>
+              </div>
+
+              {/* prestige */}
+              <span className="text-yellow-400 text-xs">
+                ★ {player.prestige}
+              </span>
+
+              {/* disconnected label */}
+              {isDisconnected && (
+                <span className="text-gray-500 text-[10px]">disconnected</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── Action buttons (fixed bottom) ── */}
+      {/* Action buttons */}
       <div className="flex gap-2 px-3 py-2 bg-gray-900 border-t border-gray-700 shrink-0">
         <button
           onClick={() => setShowGemPicker(true)}
-          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-sm"
+          disabled={!isMyTurn}
+          className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold py-2 rounded-xl text-sm"
         >
           Take Gems
         </button>
         <button
           onClick={() => setReserveMode(!reserveMode)}
-          disabled={currentPlayer.reservedCards.length >= 3}
+          disabled={!isMyTurn || currentPlayer.reservedCards.length >= 3}
           className={`flex-1 font-bold py-2 rounded-xl text-sm disabled:opacity-40 ${
             reserveMode
               ? "bg-yellow-400 text-gray-900"
@@ -250,7 +328,7 @@ export default function Game({ players, onExit }: GameProps) {
         </button>
       </div>
 
-      {/* ── Modals ── */}
+      {/* Modals */}
       {showGemPicker && (
         <GemPicker
           state={state}
@@ -277,6 +355,8 @@ export default function Game({ players, onExit }: GameProps) {
           onCancel={() => setBuyTarget(null)}
         />
       )}
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
