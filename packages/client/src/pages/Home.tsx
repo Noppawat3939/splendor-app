@@ -73,7 +73,7 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
       style={{ backgroundImage: `url(${banner})` }}
       className="min-h-screen bg-cover bg-center text-white flex items-center justify-center"
     >
-      <div className="bg-gray-900/60 backdrop-blur-sm shadow-xl rounded-2xl p-8 w-full max-w-md flex flex-col gap-6 max-sm:mx-3 max-sm:p-5">
+      <div className="bg-gray-950/70 backdrop-blur-sm shadow-2xl rounded-2xl p-8 w-full max-w-md flex flex-col gap-6 max-sm:mx-3 max-sm:p-5">
         <img
           src={logo}
           alt="logo"
@@ -88,7 +88,7 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
             <p className="text-sm text-gray-400 text-center">Select Mode</p>
             <button
               onClick={() => setMode("local")}
-              className="bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition-colors"
+              className="border-2 border-yellow-400 rounded-xl py-3 font-bold text-yellow-500 transition-all duration-300 hover:bg-yellow-400 hover:text-white"
             >
               Single Player
             </button>
@@ -98,7 +98,7 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
 
                 setMode("online");
               }}
-              className="bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-500 transition-colors"
+              className="border-2 border-yellow-400 rounded-xl py-3 font-bold text-yellow-500 transition-all duration-300 hover:bg-yellow-400 hover:text-white"
             >
               Online Player
             </button>

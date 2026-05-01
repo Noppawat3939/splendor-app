@@ -1,7 +1,6 @@
 import type { DevelopmentCard } from "@splendor/core";
 import { GEM_COLORS } from "@splendor/core";
 import { gemColor } from "../../utils/gemColor";
-import background from "../../assets/banner.webp";
 import cardBackgroundBlue from "../../assets/card-background-blue.webp";
 import cardBackgroundRed from "../../assets/card-background-red.webp";
 import cardBackgroundGreen from "../../assets/card-background-green.webp";
@@ -41,7 +40,7 @@ export default function CardTile({
       className={`
       rounded-lg flex flex-col justify-between relative
       transition-all overflow-hidden
-      aspect-[2/3] w-full bg-cover bg-no-repeat bg-center shadow-2xl  border-white/30 border-l border-b duration-300 hover:-translate-y-1
+      aspect-[2/3] w-full bg-cover bg-no-repeat bg-center shadow-2xl border-white/30 border-l border-b duration-300 hover:-translate-y-1 hover:border-b-2 hover:border-yellow-300/80
       ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       ${isReserved ? "opacity-80" : ""}
     `}
@@ -73,7 +72,7 @@ export default function CardTile({
           {GEM_COLORS.filter((c) => card.cost[c] > 0).map((color) => (
             <div key={color} className="flex items-center gap-1">
               <div
-                className="w-10 h-10 max-sm:w-4 max-sm:h-4 rounded-full shadow-inner border-2 max-sm:border border-white/80 flex justify-center items-center"
+                className="relative w-10 h-10 max-sm:w-4 max-sm:h-4 rounded-full shadow-inner border-2 max-sm:border border-white/80 flex justify-center items-center"
                 style={{ background: gemColor(color) }}
               >
                 <span
@@ -81,6 +80,9 @@ export default function CardTile({
                  [-webkit-text-stroke:0.8px_black] max-sm:[-webkit-text-stroke:0.4px_black]"
                 >
                   {card.cost[color]}
+                </span>
+                <span className="absolute -right-3 max-sm:hidden">
+                  <GemToken color={color} count={0} size={22} />
                 </span>
               </div>
             </div>
