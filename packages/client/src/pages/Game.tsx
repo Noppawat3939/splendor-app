@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { applyAction, createGame } from "@splendor/core";
+import { GEM_COLORS, applyAction, createGame } from "@splendor/core";
 import type {
   GameState,
   Action,
@@ -188,16 +188,20 @@ export default function Game(props: GameProps) {
         <div className="bg-gray-950/50 rounded-xl p-3 max-w-4xl mx-auto w-full">
           <p className="text-xs text-gray-400 mb-2">Bank</p>
           <div className="flex justify-center gap-4 flex-wrap">
-            {(["white", "blue", "green", "red", "black", "gold"] as const).map(
-              (color) => (
+            {([...GEM_COLORS, "gold"] as const).map((color) => {
+              if (state.board.bank[color] === 0) {
+                return <div className="h-[80px] max-sm:h-[40px]" />;
+              }
+
+              return (
                 <GemToken
                   key={color}
                   color={color}
                   count={state.board.bank[color]}
                   size={isMobile ? 40 : 80}
                 />
-              )
-            )}
+              );
+            })}
           </div>
         </div>
 
@@ -254,9 +258,10 @@ export default function Game(props: GameProps) {
 
       {/* Player panel */}
       {showPlayerPanel && (
-        <div className="bg-gray-800/60 border-t border-gray-700 px-3 py-2 shrink-0 max-h-48 overflow-y-auto">
+        <div className="bg-gray-800/60 border-t border-gray-700 px-3 py-2 shrink-0 max-h-52 h-full max-sm:max-h-48 overflow-y-auto">
           <PlayerPanel
             player={viewingPlayer}
+            isMobile={isMobile}
             isActive={activePlayerTab === state.currentPlayerIndex}
             onBuyReserved={(cardId) => {
               const card = currentPlayer.reservedCards.find(

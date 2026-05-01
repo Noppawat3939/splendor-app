@@ -40,9 +40,10 @@ export default function CardTile({
       className={`
       rounded-lg flex flex-col justify-between relative
       transition-all overflow-hidden
-      aspect-[2/3] w-full bg-cover bg-no-repeat bg-center shadow-2xl border-white/30 border-l border-b duration-300 hover:-translate-y-1 hover:border-b-2 hover:border-yellow-300/80
+      aspect-[2/3] w-full bg-cover bg-no-repeat bg-center shadow-2xl border-white/30 border-l border-b duration-300 hover:-translate-y-1 hover:border-b-2 
       ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       ${isReserved ? "opacity-80" : ""}
+      ${highlight ? "hover:border-yellow-300/70" : ""}
     `}
       style={{ backgroundImage: `url(${cardTileImageMap[card.bonus]})` }}
     >
@@ -54,9 +55,12 @@ export default function CardTile({
         <div className="flex items-center justify-between mt-0 z-10">
           {card.prestige > 0 ? (
             <span
-              className="text-white [-webkit-text-stroke:1.5px_black]
-              max-sm:[-webkit-text-stroke:0.4px_black] font-bold text-[3rem] max-sm:text-[16px] drop-shadow 
-              w-fit font-serif"
+              className={`text-white font-bold drop-shadow w-fit font-serif
+              ${
+                isMobile
+                  ? "text-[16px] [-webkit-text-stroke:0.4px_black]"
+                  : "text-[3rem] [-webkit-text-stroke:1.5px_black]"
+              }`}
               style={{ lineHeight: 0 }}
             >
               {card.prestige}
@@ -72,7 +76,9 @@ export default function CardTile({
           {GEM_COLORS.filter((c) => card.cost[c] > 0).map((color) => (
             <div key={color} className="flex items-center gap-1">
               <div
-                className="relative w-10 h-10 max-sm:w-4 max-sm:h-4 rounded-full shadow-inner border-2 max-sm:border border-white/80 flex justify-center items-center"
+                className={`
+                ${isMobile ? "w-4 h-4" : "w-10 h-10"}
+                relative rounded-full shadow-inner border-2 max-sm:border border-white/80 flex justify-center items-center`}
                 style={{ background: gemColor(color) }}
               >
                 <span

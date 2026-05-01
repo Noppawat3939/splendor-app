@@ -9,6 +9,7 @@ interface PlayerPanelProps {
   isActive: boolean;
   onBuyReserved: (cardId: string) => void;
   onReserve: (cardId: string) => void;
+  isMobile: boolean;
 }
 
 export default function PlayerPanel({
@@ -16,6 +17,7 @@ export default function PlayerPanel({
   isActive,
   onBuyReserved,
   onReserve,
+  isMobile,
 }: PlayerPanelProps) {
   return (
     <div
@@ -36,15 +38,19 @@ export default function PlayerPanel({
       <div>
         <p className="text-xs text-gray-400 mb-1">Tokens</p>
         <div className="flex gap-2 flex-wrap">
-          {GEM_COLORS.map((color) => (
-            <GemToken
-              key={color}
-              color={color}
-              count={player.tokens[color]}
-              size={36}
-            />
-          ))}
-          <GemToken color="gold" count={player.tokens.gold} size={36} />
+          {([...GEM_COLORS, "gold"] as const).map((color, i) => {
+            if (player.tokens[color] === 0) {
+              return <div key={i} className="h-16 max-sm:h-8" />;
+            }
+            return (
+              <GemToken
+                key={color}
+                color={color}
+                count={player.tokens[color]}
+                size={isMobile ? 32 : 64}
+              />
+            );
+          })}
         </div>
       </div>
 
@@ -77,8 +83,9 @@ export default function PlayerPanel({
           </p>
           <div className="flex gap-2 overflow-x-auto">
             {player.reservedCards.map((card) => (
-              <div key={card.id} className="flex flex-col gap-1">
+              <div key={card.id} className="flex flex-[.3] flex-col gap-1">
                 <CardTile
+                  isMobile={isMobile}
                   card={card}
                   isReserved
                   onClick={() => onBuyReserved(card.id)}

@@ -6,7 +6,7 @@ export function gemColor(color: AnyGem | string): string {
     blue: "#2563eb",
     green: "#16a34a",
     red: "#dc2626",
-    black: "#2C2C2C",
+    black: "#101010",
     gold: "#eab308",
   };
   return map[color] ?? "#fff";
