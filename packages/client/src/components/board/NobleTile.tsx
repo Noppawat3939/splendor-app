@@ -36,7 +36,7 @@ export default function NobleTile({ noble }: NobleTileProps) {
 
   return (
     <div
-      className="rounded-xl shrink-0 border border-white/60 flex relative overflow-hidden flex-1 min-h-[220px] max-sm:min-h-[100px] transition-all duration-200 hover:translate-y-1"
+      className="rounded-xl shrink-0 border-l border-b border-white/70 flex relative overflow-hidden flex-1 min-h-[220px] max-sm:min-h-[100px] transition-all duration-200 hover:translate-y-1"
       style={{
         background:
           "linear-gradient(135deg, #1c1107 0%, #2d1f0a 50%, #1c1107 100%)",

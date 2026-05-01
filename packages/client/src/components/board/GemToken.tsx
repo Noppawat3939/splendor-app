@@ -59,11 +59,11 @@ export default function GemToken({ color, count, size = 44 }: GemTokenProps) {
 
         {/* inner circle — nature bg */}
         <div
-          className="rounded-full flex items-center justify-center relative overflow-hidden shadow"
+          className="rounded-full flex items-center justify-center relative overflow-hidden shadow-inner"
           style={{
             width: innerSize,
             height: innerSize,
-            background: "#FFCE99",
+            background: "#D9CFC7",
           }}
         >
           {/* image slot */}
@@ -83,18 +83,20 @@ export default function GemToken({ color, count, size = 44 }: GemTokenProps) {
         </div>
 
         {/* count badge */}
-        <div
-          className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center font-bold shadow"
-          style={{
-            width: size * 0.38,
-            height: size * 0.38,
-            fontSize: size * 0.2,
-            background: isLight ? "#374151" : "white",
-            color: isLight ? "white" : "#111",
-          }}
-        >
-          {count}
-        </div>
+        {count > 0 && (
+          <div
+            className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center font-bold shadow"
+            style={{
+              width: size * 0.38,
+              height: size * 0.38,
+              fontSize: size * 0.2,
+              background: isLight ? "#374151" : "white",
+              color: isLight ? "white" : "#111",
+            }}
+          >
+            {count}
+          </div>
+        )}
       </div>
     </div>
   );

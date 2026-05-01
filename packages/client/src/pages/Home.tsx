@@ -41,6 +41,7 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
   function handleLocalStart() {
     if (isEmptyPlayerName)
       return showToast("Please enter player name", "error");
+
     const players: PlayerConfig[] = names
       .slice(0, playerCount)
       .map((name, i) => ({
@@ -48,6 +49,11 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
         name: name.trim() || `Player ${i + 1}`,
         isAI: false,
       }));
+
+    // save mode to local
+    localStorage.setItem("game_mode", mode);
+    localStorage.setItem("local_config", JSON.stringify(players));
+
     onStart(players);
   }
 
@@ -84,19 +90,23 @@ export default function Home({ onStart, onCreateRoom, onJoinRoom }: HomeProps) {
               onClick={() => setMode("local")}
               className="bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition-colors"
             >
-              🎮 Local Multiplayer
+              Single Player
             </button>
             <button
-              onClick={() => setMode("online")}
+              onClick={() => {
+                localStorage.setItem("game_mode", "online");
+
+                setMode("online");
+              }}
               className="bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-500 transition-colors"
             >
-              🌐 Online Multiplayer
+              Online Player
             </button>
             <button
               disabled
-              className="bg-gray-700 text-gray-500 font-bold py-3 rounded-xl cursor-not-allowed"
+              className="bg-gray-700 text-gray-500 font-bold py-3 rounded-xl disabled:cursor-not-allowed"
             >
-              🤖 vs AI (Coming Soon)
+              vs AI (Coming Soon)
             </button>
           </div>
         )}

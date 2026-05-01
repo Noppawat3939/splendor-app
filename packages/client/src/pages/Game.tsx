@@ -13,8 +13,10 @@ import GemPicker from "../components/actions/GemPicker";
 import GemToken from "../components/board/GemToken";
 import BuyCardModal from "../components/actions/BuyCardModal";
 import logo from "../assets/game-logo.webp";
+import gameBackground1 from "../assets/game-background-1.webp";
 import ToastContainer from "../components/ui/Toast";
 import { useToast } from "../hooks/useToast";
+import { useIsMobile } from "../hooks/useMobile";
 
 interface PlayerConfig {
   id: string;
@@ -47,12 +49,18 @@ export default function Game(props: GameProps) {
   const isOnline = !!props.playerId;
 
   const { toasts, showToast, removeToast } = useToast();
+  const isMobile = useIsMobile();
 
   // Local mode — manage state internally
-  const [localState, setLocalState] = useState<GameState | null>(
-    !isOnline ? () => createGame(props.players!) : null
-  );
-
+  const [localState, setLocalState] = useState<GameState | null>(() => {
+    if (isOnline) return null;
+    // restore จาก localStorage ถ้ามี
+    try {
+      const saved = localStorage.getItem("splendor_local_game");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return createGame(props.players!);
+  });
   const state = isOnline ? props.gameState : localState!;
 
   const [showGemPicker, setShowGemPicker] = useState(false);
@@ -80,6 +88,7 @@ export default function Game(props: GameProps) {
     try {
       const next = applyAction(state, action);
       setLocalState(next);
+      localStorage.setItem("splendor_local_game", JSON.stringify(next));
     } catch (e) {
       showToast((e as Error).message, "error");
     }
@@ -126,7 +135,10 @@ export default function Game(props: GameProps) {
               ))}
           </div>
           <button
-            onClick={props.onExit}
+            onClick={() => {
+              localStorage.removeItem("splendor_local_game");
+              props.onExit();
+            }}
             className="bg-yellow-400 text-gray-900 font-bold py-3 px-6 rounded-xl hover:bg-yellow-300"
           >
             {isOnline ? "Back to Home" : "Play Again"}
@@ -138,10 +150,18 @@ export default function Game(props: GameProps) {
 
   // ── Game Board ────────────────────────────────────────────
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
+    <div
+      className="h-screen flex flex-col text-white 
+    overflow-hidden bg-center bg-cover bg-no-repeat"
+      style={{ backgroundImage: `url(${gameBackground1})` }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
-        <img src={logo} alt="logo" width={76} className="my-auto" />
+        <img
+          src={logo}
+          alt="logo"
+          className="my-auto w-[120px] max-sm:w-[76px]"
+        />
         <div className="text-sm text-center">
           <span className="text-yellow-400 font-bold">
             {currentPlayer.name}
@@ -152,7 +172,10 @@ export default function Game(props: GameProps) {
           )}
         </div>
         <button
-          onClick={props.onExit}
+          onClick={() => {
+            localStorage.removeItem("splendor_local_game");
+            props.onExit();
+          }}
           className="text-sm text-gray-400 hover:text-white"
         >
           Exit
@@ -162,25 +185,24 @@ export default function Game(props: GameProps) {
       {/* Board */}
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3">
         {/* Bank */}
-        <div className="bg-gray-800/60 rounded-xl p-3">
+        <div className="bg-gray-950/50 rounded-xl p-3 max-w-4xl mx-auto w-full">
           <p className="text-xs text-gray-400 mb-2">Bank</p>
-          <div className="flex gap-2 flex-wrap">
-            {(["white", "blue", "green", "red", "black"] as const).map(
+          <div className="flex justify-center gap-4 flex-wrap">
+            {(["white", "blue", "green", "red", "black", "gold"] as const).map(
               (color) => (
                 <GemToken
                   key={color}
                   color={color}
                   count={state.board.bank[color]}
-                  size={40}
+                  size={isMobile ? 40 : 80}
                 />
               )
             )}
-            <GemToken color="gold" count={state.board.bank.gold} size={40} />
           </div>
         </div>
 
         {/* Nobles */}
-        <div className="bg-gray-800/60 rounded-xl p-3 max-w-4xl mx-auto w-full">
+        <div className="bg-gray-950/50 rounded-xl p-3 max-w-4xl mx-auto w-full">
           <p className="text-xs text-gray-400 mb-2">Nobles</p>
           <div className="flex space-x-4 max-sm:space-x-2 overflow-x-auto pb-1">
             {state.board.nobles.map((noble) => (
@@ -193,7 +215,7 @@ export default function Game(props: GameProps) {
         {([3, 2, 1] as const).map((tier) => (
           <div
             key={tier}
-            className="bg-gray-800/60 rounded-xl p-3 max-w-4xl mx-auto w-full"
+            className="bg-gray-950/50 rounded-xl p-3 max-w-4xl mx-auto w-full"
           >
             <div className="flex items-center gap-2 mb-2">
               <p className="text-xs text-gray-400">Tier {tier}</p>
@@ -213,6 +235,7 @@ export default function Game(props: GameProps) {
                   card={card}
                   highlight={reserveMode}
                   disabled={!isMyTurn}
+                  isMobile={isMobile}
                   onClick={() => {
                     if (!isMyTurn) return;
                     if (reserveMode) {
