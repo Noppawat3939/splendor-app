@@ -89,16 +89,24 @@ export function validateTakeSameGems(
   state: GameState,
   color: GemColor
 ): ValidationResult {
-  if (state.board.bank[color] < GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK)
-    return fail(
-      `Need at least ${GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK} ${color} gems in bank`
-    );
+  const playerCount = state.players.length;
+  const minInBank =
+    playerCount === 2
+      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_2P
+      : playerCount === 3
+      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_3P
+      : GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_4P;
+
+  if (state.board.bank[color] < minInBank)
+    return fail(`Need at least ${minInBank} ${color} gems in bank`);
+
   const player = currentPlayer(state);
   if (
     totalTokens(player) + GAME_CONFIG.TAKE_SAME_GEM_AMOUNT >
     GAME_CONFIG.MAX_TOKENS_IN_HAND
   )
     return fail(`Would exceed ${GAME_CONFIG.MAX_TOKENS_IN_HAND} token limit`);
+
   return ok;
 }
 

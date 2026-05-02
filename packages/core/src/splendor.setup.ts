@@ -156,9 +156,17 @@ export function getLegalActions(state: GameState): Action[] {
     actions.push({ type: "takeDifferentGems", gems });
   }
 
-  // 2. takeSameGems — colors with >= 4 tokens and player won't exceed 10
+  // 2. takeSameGems — colors with >= min tokens and player won't exceed 10
+  const playerCount = state.players.length;
+  const minInBank =
+    playerCount === 2
+      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_2P
+      : playerCount === 3
+      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_3P
+      : GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_4P;
+
   for (const color of GEM_COLORS) {
-    if (bank[color] >= GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK) {
+    if (bank[color] >= minInBank) {
       const totalAfter = totalTokens(player) + GAME_CONFIG.TAKE_SAME_GEM_AMOUNT;
       if (totalAfter <= GAME_CONFIG.MAX_TOKENS_IN_HAND) {
         actions.push({ type: "takeSameGems", gemColor: color });

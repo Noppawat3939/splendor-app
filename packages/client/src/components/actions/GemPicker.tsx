@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { GemColor, GameState } from "@splendor/core";
-import { GEM_COLORS } from "@splendor/core";
+import { GEM_COLORS, GAME_CONFIG } from "@splendor/core";
 import { gemColor } from "../../utils/gemColor";
 
 interface GemPickerProps {
@@ -22,12 +22,18 @@ export default function GemPicker({
     {}
   );
   const bank = state.board.bank;
+  const player = state.players[state.currentPlayerIndex];
+
+  // จำนวน token ที่มีอยู่แล้ว
+  const currentTokens = Object.values(player.tokens).reduce((a, b) => a + b, 0);
   const totalSelected = Object.values(selected).reduce((a, b) => a + b, 0);
+  const tokensAfter = currentTokens + totalSelected;
+  const remainingSlots = GAME_CONFIG.MAX_TOKENS_IN_HAND - currentTokens;
 
   function toggleGem(color: GemColor) {
     const current = selected[color] ?? 0;
 
-    // already selected this color → deselect
+    // deselect
     if (current > 0) {
       const next = { ...selected };
       delete next[color];
@@ -35,16 +41,13 @@ export default function GemPicker({
       return;
     }
 
-    const colorCount = Object.keys(selected).length;
+    // ถ้าเพิ่มแล้วจะเกิน 10 → ไม่ให้เลือก
+    if (totalSelected >= remainingSlots) return;
 
     // max 3 different colors
-    if (colorCount >= 3) return;
+    if (Object.keys(selected).length >= 3) return;
 
     setSelected({ ...selected, [color]: 1 });
-  }
-
-  function handleTakeSame(color: GemColor) {
-    onTakeSame(color);
   }
 
   function handleConfirm() {
@@ -55,7 +58,19 @@ export default function GemPicker({
   return (
     <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-50">
       <div className="bg-gray-800 rounded-t-2xl p-6 w-full max-w-md flex flex-col gap-4">
-        <h2 className="text-white font-bold text-lg">Take Gems</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-white font-bold text-lg">Take Gems</h2>
+          {/* token counter */}
+          <div
+            className={`text-sm font-bold px-3 py-1 rounded-full ${
+              tokensAfter >= GAME_CONFIG.MAX_TOKENS_IN_HAND
+                ? "bg-red-600 text-white"
+                : "bg-gray-700 text-gray-300"
+            }`}
+          >
+            {tokensAfter} / {GAME_CONFIG.MAX_TOKENS_IN_HAND}
+          </div>
+        </div>
 
         {/* Take different gems */}
         <div>
@@ -66,16 +81,22 @@ export default function GemPicker({
             {GEM_COLORS.map((color) => {
               const inBank = bank[color];
               const isSelected = (selected[color] ?? 0) > 0;
+              // disable ถ้า bank หมด หรือ token เต็ม หรือ เลือกครบ 3 สีแล้ว
+              const isDisabled =
+                inBank === 0 ||
+                (!isSelected && totalSelected >= remainingSlots) ||
+                (!isSelected && Object.keys(selected).length >= 3);
+
               return (
                 <button
                   key={color}
-                  disabled={inBank === 0}
+                  disabled={isDisabled}
                   onClick={() => toggleGem(color)}
                   className={`
                     w-12 h-12 rounded-full flex items-center justify-center font-bold
                     border-4 transition-all
                     ${
-                      inBank === 0
+                      isDisabled
                         ? "opacity-30 cursor-not-allowed"
                         : "cursor-pointer"
                     }
@@ -97,8 +118,12 @@ export default function GemPicker({
           </div>
           {totalSelected > 0 && (
             <p className="text-center text-xs text-gray-400 mt-2">
-              Selected: {totalSelected} gem
-              {totalSelected > 1 ? "s" : ""}
+              Selected: {totalSelected} gem{totalSelected > 1 ? "s" : ""}
+            </p>
+          )}
+          {remainingSlots === 0 && (
+            <p className="text-center text-xs text-red-400 mt-2">
+              Token limit reached ({GAME_CONFIG.MAX_TOKENS_IN_HAND}/10)
             </p>
           )}
         </div>
@@ -120,12 +145,12 @@ export default function GemPicker({
           <div className="flex gap-3 justify-center">
             {GEM_COLORS.map((color) => {
               const inBank = bank[color];
-              const canTake2 = inBank >= 4;
+              const canTake2 = inBank >= 4 && remainingSlots >= 2;
               return (
                 <button
                   key={color}
                   disabled={!canTake2}
-                  onClick={() => handleTakeSame(color)}
+                  onClick={() => onTakeSame(color)}
                   className={`
                     w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm
                     border-2 border-transparent transition-all
@@ -145,6 +170,11 @@ export default function GemPicker({
               );
             })}
           </div>
+          {remainingSlots < 2 && remainingSlots > 0 && (
+            <p className="text-center text-xs text-yellow-400 mt-1">
+              Need 2 slots free to take same gems
+            </p>
+          )}
         </div>
 
         {/* Reserve from deck */}

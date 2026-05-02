@@ -3,6 +3,7 @@ import { GEM_COLORS } from "@splendor/core";
 import { gemColor } from "../../utils/gemColor";
 import CardTile from "../board/CardTile";
 import GemToken from "../board/GemToken";
+import { useMemo } from "react";
 
 interface PlayerPanelProps {
   player: Player;
@@ -19,6 +20,11 @@ export default function PlayerPanel({
   onReserve,
   isMobile,
 }: PlayerPanelProps) {
+  const tokensCount = useMemo(
+    () => Object.values(player.tokens).reduce((a, c) => c + a, 0),
+    [player.tokens]
+  );
+
   return (
     <div
       className={`bg-gray-800 rounded-xl p-4 flex w-full flex-col gap-3 ${
@@ -27,16 +33,16 @@ export default function PlayerPanel({
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex space-x-2 items-center">
           <p className="font-bold">{player.name}</p>
-          {isActive && <p className="text-xs text-yellow-400">Your turn</p>}
+          {isActive && <p className=" text-yellow-400">- Turn</p>}
         </div>
         <p className="text-yellow-400 font-bold text-xl">★ {player.prestige}</p>
       </div>
 
       {/* Tokens */}
       <div>
-        <p className="text-xs text-gray-400 mb-1">Tokens</p>
+        <p className="text-xs text-gray-400 mb-1">{`Tokens - (${tokensCount})`}</p>
         <div className="flex gap-2 flex-wrap">
           {([...GEM_COLORS, "gold"] as const).map((color, i) => {
             if (player.tokens[color] === 0) {

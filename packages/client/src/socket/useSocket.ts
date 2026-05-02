@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import type { GameState, Action } from "@splendor/core";
 import { ClientEvent, ServerEvent } from "./events";
 
-const SERVER_URL = "http://localhost:3000"; // get from .env
+const SERVER_URL = "http://localhost:3000";
 
 export interface RoomPlayer {
   id: string;
@@ -39,25 +39,26 @@ export function useSocket() {
     disconnectedPlayers: new Set<string>(),
   });
 
-  // store roomId + playerId for reconnect
   const roomIdRef = useRef<string | null>(null);
   const playerIdRef = useRef<string | null>(null);
+  // track ว่ากำลัง reconnect อยู่ไหม
+  const isReconnectingRef = useRef<boolean>(false);
 
   useEffect(() => {
     const socket = io(SERVER_URL, { autoConnect: false });
     socketRef.current = socket;
 
-    // restore จาก localStorage ถ้ามี
+    // restore จาก localStorage
     const savedRoomId = localStorage.getItem("splendor_roomId");
     const savedPlayerId = localStorage.getItem("splendor_playerId");
     if (savedRoomId && savedPlayerId) {
       roomIdRef.current = savedRoomId;
       playerIdRef.current = savedPlayerId;
+      isReconnectingRef.current = true;
     }
 
     socket.on("connect", () => {
       console.log("[socket] connected");
-      // ถ้ามี roomId + playerId → reconnect
       if (roomIdRef.current && playerIdRef.current) {
         socket.emit(ClientEvent.RECONNECT, {
           roomId: roomIdRef.current,
@@ -70,12 +71,10 @@ export function useSocket() {
       console.log("[socket] disconnected");
     });
 
-    // ── Server events ────────────────────────────────────────
-
+    // ── ROOM_CREATED ─────────────────────────────────────────
     socket.on(ServerEvent.ROOM_CREATED, ({ roomId, playerId, players }) => {
       roomIdRef.current = roomId;
       playerIdRef.current = playerId;
-      // เก็บไว้ใน localStorage กัน refresh
       localStorage.setItem("splendor_roomId", roomId);
       localStorage.setItem("splendor_playerId", playerId);
       setState((s) => ({
@@ -88,39 +87,12 @@ export function useSocket() {
       }));
     });
 
-    // reconnect กลับมาตอน game กำลังเล่น
-    socket.on(ServerEvent.GAME_STARTED, ({ gameState }) => {
-      // ถ้ามาจาก reconnect และ screen ไม่ใช่ lobby → ไปเกมเลย
-      setState((s) => ({
-        ...s,
-        screen: "lobby",
-        gameState,
-        countdown: s.screen === "game" ? null : 3, // reconnect ไม่ต้อง countdown
-      }));
-
-      // ถ้า screen เป็น game อยู่แล้ว (reconnect) → ไม่ countdown
-      const isReconnecting = !!localStorage.getItem("splendor_roomId");
-      if (isReconnecting && roomIdRef.current) {
-        setState((s) => ({ ...s, screen: "game", countdown: null }));
-        return;
-      }
-
-      let count = 3;
-      const timer = setInterval(() => {
-        count--;
-        if (count <= 0) {
-          clearInterval(timer);
-          setState((s) => ({ ...s, screen: "game", countdown: null }));
-        } else {
-          setState((s) => ({ ...s, countdown: count }));
-        }
-      }, 1000);
-    });
-
+    // ── PLAYER_JOINED ─────────────────────────────────────────
     socket.on(ServerEvent.PLAYER_JOINED, ({ players }) => {
       setState((s) => ({ ...s, players }));
     });
 
+    // ── PLAYER_READY ──────────────────────────────────────────
     socket.on(ServerEvent.PLAYER_READY, ({ playerId }) => {
       setState((s) => ({
         ...s,
@@ -130,8 +102,18 @@ export function useSocket() {
       }));
     });
 
+    // ── GAME_STARTED ──────────────────────────────────────────
     socket.on(ServerEvent.GAME_STARTED, ({ gameState }) => {
-      // เริ่ม countdown 3 วินาที
+      const reconnecting = isReconnectingRef.current;
+      isReconnectingRef.current = false;
+
+      if (reconnecting) {
+        // reconnect → ไปเกมเลย ไม่ต้อง countdown
+        setState((s) => ({ ...s, screen: "game", gameState, countdown: null }));
+        return;
+      }
+
+      // เริ่มเกมปกติ → countdown 3 วินาที
       setState((s) => ({ ...s, screen: "lobby", gameState, countdown: 3 }));
 
       let count = 3;
@@ -146,18 +128,22 @@ export function useSocket() {
       }, 1000);
     });
 
+    // ── STATE_UPDATED ─────────────────────────────────────────
     socket.on(ServerEvent.STATE_UPDATED, ({ gameState }) => {
       setState((s) => ({ ...s, gameState }));
     });
 
+    // ── ACTION_ERROR ──────────────────────────────────────────
     socket.on(ServerEvent.ACTION_ERROR, ({ message }) => {
       setState((s) => ({ ...s, error: message }));
     });
 
+    // ── GAME_ENDED ────────────────────────────────────────────
     socket.on(ServerEvent.GAME_ENDED, ({ winner, gameState }) => {
       setState((s) => ({ ...s, screen: "ended", winner, gameState }));
     });
 
+    // ── PLAYER_DISCONNECTED ───────────────────────────────────
     socket.on(
       ServerEvent.PLAYER_DISCONNECTED,
       ({ playerId, name, timeoutSec }) => {
@@ -169,6 +155,7 @@ export function useSocket() {
       }
     );
 
+    // ── PLAYER_RECONNECTED ────────────────────────────────────
     socket.on(ServerEvent.PLAYER_RECONNECTED, ({ playerId }) => {
       setState((s) => {
         const next = new Set(s.disconnectedPlayers);
@@ -177,26 +164,22 @@ export function useSocket() {
       });
     });
 
-    socket.on(ServerEvent.PLAYER_LEFT, ({ playerId }) => {
-      setState((s) => ({
-        ...s,
-        players: s.players.filter((p) => p.id !== playerId),
-      }));
-    });
-
-    socket.on(ServerEvent.PLAYER_KICKED, ({ playerId }) => {
-      setState((s) => ({
-        ...s,
-        players: s.players.filter((p) => p.id !== playerId),
-      }));
-    });
-
-    socket.on(ServerEvent.PLAYER_KICKED, ({ name }) => {
-      console.log(`[kicked] ${name}`);
-    });
-
-    socket.on(ServerEvent.PLAYER_LEFT, ({ name }) => {
+    // ── PLAYER_LEFT ───────────────────────────────────────────
+    socket.on(ServerEvent.PLAYER_LEFT, ({ playerId, name }) => {
       console.log(`[left] ${name}`);
+      setState((s) => ({
+        ...s,
+        players: s.players.filter((p) => p.id !== playerId),
+      }));
+    });
+
+    // ── PLAYER_KICKED ─────────────────────────────────────────
+    socket.on(ServerEvent.PLAYER_KICKED, ({ playerId, name }) => {
+      console.log(`[kicked] ${name}`);
+      setState((s) => ({
+        ...s,
+        players: s.players.filter((p) => p.id !== playerId),
+      }));
     });
 
     socket.connect();
@@ -209,10 +192,12 @@ export function useSocket() {
   // ── Actions ───────────────────────────────────────────────
 
   function createRoom(playerName: string) {
+    isReconnectingRef.current = false;
     socketRef.current?.emit(ClientEvent.CREATE_ROOM, { playerName });
   }
 
   function joinRoom(roomId: string, playerName: string) {
+    isReconnectingRef.current = false;
     socketRef.current?.emit(ClientEvent.JOIN_ROOM, { roomId, playerName });
   }
 
@@ -231,10 +216,9 @@ export function useSocket() {
 
   function leaveRoom() {
     const currentRoomId = state.roomId;
-
-    // clear state ก่อน
     roomIdRef.current = null;
     playerIdRef.current = null;
+    isReconnectingRef.current = false;
     localStorage.removeItem("splendor_roomId");
     localStorage.removeItem("splendor_playerId");
     setState((s) => ({
@@ -248,8 +232,6 @@ export function useSocket() {
       countdown: null,
       disconnectedPlayers: new Set(),
     }));
-
-    // emit หลัง clear state
     if (currentRoomId) {
       socketRef.current?.emit(ClientEvent.LEAVE_ROOM, {
         roomId: currentRoomId,
