@@ -143,6 +143,8 @@ export const GAME_CONFIG = {
   GEM_TOKENS_PER_COLOR_4P: 7,
 } as const;
 
+export type TGameConfigField = keyof typeof GAME_CONFIG;
+
 // ── Utility Types ────────────────────────────────────────────
 
 /** Empty gem pool helper */

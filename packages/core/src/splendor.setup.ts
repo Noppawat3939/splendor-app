@@ -12,6 +12,7 @@ import {
   GAME_CONFIG,
   emptyGemPool,
   emptyTokenPool,
+  TGameConfigField,
 } from "./splendor.types";
 import {
   TIER1_CARDS,
@@ -159,11 +160,9 @@ export function getLegalActions(state: GameState): Action[] {
   // 2. takeSameGems — colors with >= min tokens and player won't exceed 10
   const playerCount = state.players.length;
   const minInBank =
-    playerCount === 2
-      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_2P
-      : playerCount === 3
-      ? GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_3P
-      : GAME_CONFIG.TAKE_SAME_GEM_MIN_IN_BANK_4P;
+    GAME_CONFIG[
+      `TAKE_SAME_GEM_MIN_IN_BANK_${playerCount}P` as TGameConfigField
+    ] || 4;
 
   for (const color of GEM_COLORS) {
     if (bank[color] >= minInBank) {
