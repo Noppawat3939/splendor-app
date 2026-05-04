@@ -28,15 +28,15 @@ export interface SocketState {
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
   const [state, setState] = useState<SocketState>({
-    screen: "home",
-    roomId: null,
-    playerId: null,
-    players: [],
-    gameState: null,
-    error: null,
-    winner: null,
     countdown: null,
     disconnectedPlayers: new Set<string>(),
+    error: null,
+    gameState: null,
+    playerId: null,
+    players: [],
+    roomId: null,
+    screen: "home",
+    winner: null,
   });
 
   const roomIdRef = useRef<string | null>(null);
@@ -223,14 +223,14 @@ export function useSocket() {
     localStorage.removeItem("splendor_playerId");
     setState((s) => ({
       ...s,
-      screen: "home",
-      roomId: null,
-      playerId: null,
-      players: [],
-      gameState: null,
-      winner: null,
       countdown: null,
       disconnectedPlayers: new Set(),
+      gameState: null,
+      playerId: null,
+      players: [],
+      roomId: null,
+      screen: "home",
+      winner: null,
     }));
     if (currentRoomId) {
       socketRef.current?.emit(ClientEvent.LEAVE_ROOM, {

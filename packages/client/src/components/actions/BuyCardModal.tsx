@@ -5,18 +5,18 @@ import { gemColor } from "../../utils/gemColor";
 
 interface BuyCardModalProps {
   card: DevelopmentCard;
-  player: Player;
   fromReserved: boolean;
-  onConfirm: () => void;
   onCancel: () => void;
+  onConfirm: () => void;
+  player: Player;
 }
 
 export default function BuyCardModal({
   card,
-  player,
   fromReserved,
-  onConfirm,
   onCancel,
+  onConfirm,
+  player,
 }: BuyCardModalProps) {
   const { canAfford, payment } = computePayment(player, card.cost);
 

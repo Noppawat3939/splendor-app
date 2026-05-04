@@ -14,11 +14,11 @@ interface PlayerPanelProps {
 }
 
 export default function PlayerPanel({
-  player,
   isActive,
+  isMobile,
   onBuyReserved,
   onReserve,
-  isMobile,
+  player,
 }: PlayerPanelProps) {
   const tokensCount = useMemo(
     () => Object.values(player.tokens).reduce((a, c) => c + a, 0),
