@@ -15,8 +15,8 @@ import BuyCardModal from "../components/actions/BuyCardModal";
 import logo from "../assets/game-logo.webp";
 import gameBackground1 from "../assets/game-background-1.webp";
 import ToastContainer from "../components/ui/Toast";
-import { useToast } from "../hooks/useToast";
-import { useIsMobile } from "../hooks/useMobile";
+import { useToast } from "../hooks/use-toast";
+import { useScreenSize } from "../hooks/use-get-screen-size";
 
 interface PlayerConfig {
   id: string;
@@ -49,7 +49,7 @@ export default function Game(props: GameProps) {
   const isOnline = !!props.playerId;
 
   const { toasts, showToast, removeToast } = useToast();
-  const isMobile = useIsMobile();
+  const screenSize = useScreenSize();
 
   // Local mode — manage state internally
   const [localState, setLocalState] = useState<GameState | null>(() => {
@@ -198,7 +198,7 @@ export default function Game(props: GameProps) {
                   key={color}
                   color={color}
                   count={state.board.bank[color]}
-                  size={isMobile ? 40 : 80}
+                  size={screenSize ? 40 : 80}
                 />
               );
             })}
@@ -239,7 +239,7 @@ export default function Game(props: GameProps) {
                   card={card}
                   highlight={reserveMode}
                   disabled={!isMyTurn}
-                  isMobile={isMobile}
+                  screenSize={screenSize}
                   onClick={() => {
                     if (!isMyTurn) return;
                     if (reserveMode) {
@@ -261,7 +261,7 @@ export default function Game(props: GameProps) {
         <div className="bg-gray-800/60 border-t border-gray-700 px-3 py-2 shrink-0 max-h-52 h-full max-sm:max-h-48 overflow-y-auto">
           <PlayerPanel
             player={viewingPlayer}
-            isMobile={isMobile}
+            screenSize={screenSize}
             isActive={activePlayerTab === state.currentPlayerIndex}
             onBuyReserved={(cardId) => {
               const card = currentPlayer.reservedCards.find(

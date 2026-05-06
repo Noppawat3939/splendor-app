@@ -8,6 +8,8 @@ import cardBackgroundBlack from "../../assets/card-background-black.webp";
 import cardBackgroundWhite from "../../assets/card-background-white.webp";
 
 import GemToken from "./GemToken";
+import { ScreenSize } from "../../hooks/use-get-screen-size";
+import { useMemo } from "react";
 
 interface CardTileProps {
   card: DevelopmentCard;
@@ -15,7 +17,7 @@ interface CardTileProps {
   disabled?: boolean;
   isReserved?: boolean;
   highlight?: boolean;
-  isMobile: boolean;
+  screenSize: ScreenSize;
 }
 
 const cardTileImageMap: Record<string, string> = {
@@ -32,8 +34,15 @@ export default function CardTile({
   disabled,
   isReserved,
   highlight,
-  isMobile,
+  screenSize,
 }: CardTileProps) {
+  const { isMobile, isTablet } = useMemo(() => {
+    return {
+      isMobile: screenSize === "mobile",
+      isTablet: screenSize === "tablet",
+    };
+  }, [screenSize]);
+
   return (
     <div
       onClick={!disabled ? onClick : undefined}
@@ -68,7 +77,11 @@ export default function CardTile({
           ) : (
             <span />
           )}
-          <GemToken color={card.bonus} count={0} size={isMobile ? 16 : 40} />
+          <GemToken
+            color={card.bonus}
+            count={0}
+            size={isMobile ? 16 : isTablet ? 28 : 40}
+          />
         </div>
 
         {/* cost */}

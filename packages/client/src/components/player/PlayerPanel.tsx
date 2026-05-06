@@ -4,18 +4,19 @@ import { gemColor } from "../../utils/gemColor";
 import CardTile from "../board/CardTile";
 import GemToken from "../board/GemToken";
 import { useMemo } from "react";
+import { ScreenSize } from "../../hooks/use-get-screen-size";
 
 interface PlayerPanelProps {
   player: Player;
   isActive: boolean;
   onBuyReserved: (cardId: string) => void;
   onReserve: (cardId: string) => void;
-  isMobile: boolean;
+  screenSize: ScreenSize;
 }
 
 export default function PlayerPanel({
   isActive,
-  isMobile,
+  screenSize,
   onBuyReserved,
   onReserve,
   player,
@@ -53,7 +54,7 @@ export default function PlayerPanel({
                 key={color}
                 color={color}
                 count={player.tokens[color]}
-                size={isMobile ? 32 : 64}
+                // size={screenSize=== "mobile" ? 32  ? screenSize === "tablet" ?  : 64}
               />
             );
           })}
@@ -91,8 +92,8 @@ export default function PlayerPanel({
             {player.reservedCards.map((card) => (
               <div key={card.id} className="flex flex-[.3] flex-col gap-1">
                 <CardTile
-                  isMobile={isMobile}
                   card={card}
+                  screenSize={screenSize}
                   isReserved
                   onClick={() => onBuyReserved(card.id)}
                 />

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import logo from "../assets/game-logo.webp";
 import banner from "../assets/banner.webp";
-import { useToast } from "../hooks/useToast";
+import { useToast } from "../hooks/use-toast";
 import ToastContainer from "../components/ui/Toast";
 
 interface PlayerConfig {

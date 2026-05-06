@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Toast } from "../../hooks/useToast";
+import type { Toast } from "../../hooks/use-toast";
 
 interface ToastItemProps {
   toast: Toast;
