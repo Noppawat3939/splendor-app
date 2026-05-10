@@ -191,6 +191,7 @@ io.on("connection", (socket) => {
     if (!room) return;
 
     const player = room.handleDisconnect(socket.id, (playerId) => {
+      // timeout callback — kick player หลัง 30s
       const kicked = room.kickPlayer(playerId);
       if (!kicked) return;
 
@@ -201,7 +202,16 @@ io.on("connection", (socket) => {
 
       console.log(`[kicked] ${kicked.name} from room ${room.id}`);
 
-      // ถ้าเหลือ 1 คน และเกมเริ่มแล้ว → win
+      // ถ้าเป็น currentPlayer → skip turn ตอน kick เท่านั้น
+      if (room.gameState && room.getCurrentPlayerId() === kicked.id) {
+        try {
+          const gameState = room.skipCurrentTurn();
+          io.to(room.id).emit(ServerEvent.STATE_UPDATED, { gameState });
+        } catch (e) {
+          console.error("[skip_turn_error]", e);
+        }
+      }
+
       if (room.gameState && room.players.length === 1) {
         const winner = room.players[0];
         io.to(room.id).emit(ServerEvent.GAME_ENDED, {
@@ -219,22 +229,12 @@ io.on("connection", (socket) => {
 
     if (!player) return;
 
-    // broadcast disconnect
+    // broadcast disconnect — ไม่ skip turn
     io.to(room.id).emit(ServerEvent.PLAYER_DISCONNECTED, {
       playerId: player.id,
       name: player.name,
       timeoutSec: 30,
     });
-
-    // ถ้า disconnect player เป็น currentPlayer → skip turn
-    if (room.gameState && room.getCurrentPlayerId() === player.id) {
-      try {
-        const gameState = room.skipCurrentTurn();
-        io.to(room.id).emit(ServerEvent.STATE_UPDATED, { gameState });
-      } catch (e) {
-        console.error("[skip_turn_error]", e);
-      }
-    }
   });
 });
 
